@@ -13,11 +13,11 @@ st.markdown("""
 This mini–project contains:
 - SIP Future Value Calculator (Home Page)
 - Risk Based Asset Allocation Recommendation
-- Full Backtesting System (see *Backtest* in Pages)
-- Goal Calculator (see *Goal Tracker* in Pages)
-- Fund Comparison (see *Fund Compare* in Pages)
+- Full Backtesting System
+- Goal Calculator
+- Fund Comparison
 
-Navigate using **Pages** (top–left in Streamlit sidebar).
+
 """)
 
 st.subheader("1) SIP Calculator")
