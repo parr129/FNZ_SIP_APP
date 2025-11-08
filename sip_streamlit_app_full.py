@@ -1,67 +1,93 @@
-# sip_streamlit_app_full.py
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-from allocation_module import recommend_allocation
+import datetime
 
-st.set_page_config(page_title="FNZ SIP App", layout="wide")
+st.set_page_config(page_title="SIP Engine", layout="wide")
 
-st.title("FNZ – Wealth Growth & SIP Analytics Platform")
+# ------------------- SIDE BAR -------------------
+with st.sidebar:
+    st.header("📌 Navigation")
+    page = st.radio("Select Feature",
+                    ["SIP Calculator",
+                     "Goal Tracking",
+                     "Fund Comparison",
+                     "Backtest SIP"])
 
-st.markdown("""
-This mini–project contains:
-- SIP Future Value Calculator (Home Page)
-- Risk Based Asset Allocation Recommendation
-- Full Backtesting System
-- Goal Calculator
-- Fund Comparison
+    st.markdown("---")
+    st.caption("Built by Keshav")
 
 
-""")
+# ------------------- feature functions -------------------
+def calculate_final_value(monthly_invest, years, rate):
+    n = years * 12
+    r = rate / 12 / 100
+    fv = monthly_invest * (((1 + r) ** n - 1) / r) * (1 + r)
+    return fv
 
-st.subheader("1) SIP Calculator")
 
-monthly = st.number_input("Monthly SIP Amount (₹)", min_value=100, value=2000, step=100)
-years = st.slider("Investment Duration (years)", 1, 50, 10)
-expected_return = st.number_input("Expected Annual Return (%)", min_value=1.0, value=12.0, step=0.1)
+def backtest_sip(df_prices, monthly):
+    units = 0
+    total_invested = 0
+    for px in df_prices["price"]:
+        units += monthly / px
+        total_invested += monthly
+    final_value = units * df_prices["price"].iloc[-1]
+    return final_value, total_invested
 
-if st.button("Calculate Future Value"):
-    r = expected_return/100
+
+# ------------------- MAIN PAGES -------------------
+
+if page == "SIP Calculator":
+    st.title("SIP Calculator")
+
+    m = st.number_input("Monthly SIP Amount", 500, 100000, 2000)
+    y = st.slider("Duration (years)", 1, 40, 10)
+    r = st.slider("Expected return % p.a", 5.0, 20.0, 12.0)
+
+    fv = calculate_final_value(m, y, r)
+    st.success(f"Final Value ≈ ₹{fv:,.0f}")
+
+    st.metric("Total Invested", f"₹{m*12*y:,.0f}")
+    st.metric("Profit", f"₹{fv - (m*12*y):,.0f}")
+
+
+elif page == "Goal Tracking":
+    st.title("🎯 Goal Tracking")
+
+    goal = st.number_input("Goal Amount", 10000, 50000000, 1000000)
+    years = st.slider("Years to Achieve Goal", 1, 30, 10)
+    return_assumed = st.slider("Assumed Return %", 6.0, 18.0, 12.0)
+
+    r = return_assumed/12/100
     n = years*12
-    mr = r/12
+    required_monthly = goal / (((1+r)**n -1)/r * (1+r))
 
-    if mr == 0:
-        fv = monthly * n
-    else:
-        fv = monthly * (((1+mr)**n - 1) / mr) * (1+mr)
-
-    invested = monthly * n
-    profit = fv - invested
-    st.metric("Total Invested (₹)", f"{invested:,.2f}")
-    st.metric("Estimated Corpus (₹)", f"{fv:,.2f}")
-    st.metric("Gain / Profit (₹)", f"{profit:,.2f}")
-
-    # graph
-    values = []
-    amt = 0
-    for i in range(1, int(n)+1):
-        amt = (amt + monthly)*(1+mr)
-        values.append(amt)
-    df = pd.DataFrame({"Month": range(1,int(n)+1), "Value": values})
-    st.line_chart(df.set_index("Month")["Value"])
+    st.info(f"Required Monthly SIP → **₹{required_monthly:,.0f}**")
 
 
-st.subheader("2) Risk Based Allocation Recommendation")
+elif page == "Fund Comparison":
+    st.title("📈 Fund Comparison")
 
-risk_score = st.slider("Risk score (1 = low risk, 10 = high risk)", 1, 10, 5)
+    df = pd.DataFrame({
+        "Fund": ["HDFC Growth", "Axis Bluechip", "ICICI Largecap"],
+        "5Y Return%": [14.5, 12.8, 13.7],
+        "Risk Score": ["Medium", "High", "Medium"]
+    })
 
-if st.button("Recommend Allocation"):
-    equity, debt = recommend_allocation(risk_score, years)
-    gold = max(0, 100 - equity - debt)
-    st.write("Recommended Portfolio Split:")
-    st.metric("Equity", f"{equity}%")
-    st.metric("Debt", f"{debt}%")
-    st.metric("Gold", f"{gold}%")
+    st.dataframe(df)
 
-st.info("Use the side menu (Pages) for Backtesting / Goal Tracking / Fund Comparison.")
+
+elif page == "Backtest SIP":
+    st.title("⏳ Backtest SIP Strategy")
+
+    st.caption("Simplified – using dummy monthly price data")
+
+    dfp = pd.DataFrame({"price": np.linspace(60, 120, 60)})  # 5 years
+
+    monthly = st.number_input("Monthly SIP", 500, 100000, 2000)
+    fv, inv = backtest_sip(dfp, monthly)
+
+    st.metric("Final Value", f"₹{fv:,.0f}")
+    st.metric("Invested", f"₹{inv:,.0f}")
+    st.metric("Profit", f"₹{fv - inv:,.0f}")
