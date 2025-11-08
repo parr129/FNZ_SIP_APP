@@ -1,0 +1,58 @@
+# pages/1_backtest.py
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+st.title("Backtesting - Historical SIP on NIFTY (sample)")
+
+# Load sample CSV
+@st.cache_data
+def load_nifty():
+    df = pd.read_csv('../historical_nifty50.csv', parse_dates=['date'])
+    df = df.sort_values('date').reset_index(drop=True)
+    return df
+
+df = load_nifty()
+st.write("Sample NIFTY data loaded (first 5 rows):")
+st.dataframe(df.head())
+
+st.sidebar.header("Backtest Inputs")
+monthly = st.sidebar.number_input("Monthly SIP (₹)", min_value=100, value=2000, step=100)
+start_date = st.sidebar.date_input("Start date", value=datetime(2018,1,1))
+end_date = st.sidebar.date_input("End date", value=datetime(2023,12,31))
+if start_date >= end_date:
+    st.error("Start date must be before end date.")
+else:
+    # filter
+    df_f = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))].copy()
+    if df_f.empty:
+        st.warning("No data in chosen range.")
+    else:
+        # simulate SIP: invest on first trading day of each month
+        df_f['month'] = df_f['date'].dt.to_period('M')
+        first_of_month = df_f.groupby('month').first().reset_index()
+        # accumulate
+        invested = 0
+        value = 0
+        records = []
+        for i, row in first_of_month.iterrows():
+            invested += monthly
+            # assume monthly investment gets units at close price that month
+            units = monthly / row['close']
+            # compute portfolio value as units * last available close in range
+            value += units * row['close']
+            records.append({'date': row['date'], 'invested': invested, 'value': value})
+        res = pd.DataFrame(records)
+        final_value = res['value'].iloc[-1]
+        total_invested = res['invested'].iloc[-1]
+        profit = final_value - total_invested
+        years = (res['date'].iloc[-1] - res['date'].iloc[0]).days / 365.0
+        cagr = (final_value / total_invested) ** (1/years) - 1 if years>0 else None
+        st.metric("Total Invested (₹)", f"{total_invested:,.2f}")
+        st.metric("Final Value (₹)", f"{final_value:,.2f}")
+        st.metric("Profit (₹)", f"{profit:,.2f}")
+        if cagr:
+            st.metric("Approx CAGR", f"{cagr*100:.2f}%")
+        st.line_chart(res.set_index('date')['value'])
+        st.download_button('Download backtest CSV', res.to_csv(index=False).encode('utf-8'), 'backtest.csv')
