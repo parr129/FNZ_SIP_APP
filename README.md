@@ -1,31 +1,36 @@
-# FNZ SIP Allocation Advisor
+# FNZ SIP App (Streamlit)
 
-This project is a small FinTech proof-of-work demo that recommends investment allocation (Equity vs Debt) based on risk score and investment duration. It simulates a simplified wealth advisory logic similar to how automated platforms in Wealth Management operate.
+This is a Streamlit based SIP (Systematic Investment Plan) financial utility app.
 
-## Live Demo
+It now supports:
+
+| Feature | Description |
+|--------|-------------|
+| SIP Calculator | Calculates final maturity value for a given monthly SIP amount, time period and interest |
+| Goal Tracking | Calculates how much monthly SIP is needed to reach a goal |
+| Fund Comparison | Shows performance comparison of sample mutual funds |
+| Backtest SIP | Simulated SIP backtesting on price series (dummy prices for now) |
+
+---
+
+## ✅ Live App
 
 https://fnzsipapp-keshav.streamlit.app/
 
-## How It Works
+---
 
-Inputs:
-- Monthly SIP Amount (INR)
-- Risk Score (1 to 10)
-- Investment Duration (Years)
+## Files in the Repo
 
-Output:
-- Recommended percentage allocation into Equity and Debt
-- Converted rupee amounts based on the SIP amount
+| File | Description |
+|------|-------------|
+| `sip_streamlit_app_full.py` | Main Streamlit App |
+| `requirements.txt` | Python dependencies |
+| `README.md` | documentation (this file) |
 
-## Project Files
+---
 
-| File | Purpose |
-|------|---------|
-| sip_streamlit_app_full.py | Main Streamlit UI |
-| allocation_module.py | Allocation logic |
-| requirements.txt | Python dependencies |
+## How To Run Locally
 
-## Run Locally
-
-Install dependencies:
-
+```bash
+pip install -r requirements.txt
+streamlit run sip_streamlit_app_full.py
